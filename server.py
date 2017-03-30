@@ -1,21 +1,26 @@
-import os
-try:
-  from SimpleHTTPServer import SimpleHTTPRequestHandler as Handler
-  from SocketServer import TCPServer as Server
-except ImportError:
-  from http.server import SimpleHTTPRequestHandler as Handler
-  from http.server import HTTPServer as Server
+__author__ = 'uva'
 
-# Read port selected by the cloud for our application
-PORT = int(os.getenv('PORT', 8000))
-# Change current directory to avoid exposure of control files
-os.chdir('static')
+import SocketServer
 
-httpd = Server(("", PORT), Handler)
-try:
-  print("Start serving at port %i" % PORT)
-  httpd.serve_forever()
-except KeyboardInterrupt:
-  pass
-httpd.server_close()
 
+class MyTCPHandler(SocketServer.BaseRequestHandler):
+    def handle(self):
+        self.data = self.request.recv(1024)
+        while len(self.data):
+            print(
+            'Client connected with ip address {} and port {}'.format(self.client_address[0], self.client_address[1]))
+            print 'Recieved data from client {}'.format(self.data)
+            self.request.send(self.data.upper())
+            self.data = self.request.recv(1024)
+
+    def finish(self):
+        print 'Client Leaving.... and Left !!!'
+
+
+if __name__ == '__main__':
+    pair = 'localhost', 8080
+    # Allow fast recycle and reusing
+    SocketServer.TCPServer.allow_reuse_address = True
+    server = SocketServer.TCPServer(pair, MyTCPHandler)
+    SocketServer.TCPServer.allow_reuse_address = True
+    server.serve_forever()
